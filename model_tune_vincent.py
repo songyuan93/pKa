@@ -264,10 +264,11 @@ def tune_gboost():
     rmse = np.sqrt(mean_squared_error(y_pred_test,y_test)) #get root mean square error
     mae = mean_absolute_error(y_pred_test,y_test) #get mean absolute error
     r2 = r2_score(y_pred_test,y_test) #get r square value
+    metrics = "RMSE: {}\n".format(rmse) + "MAE: {}\n".format(mae) + "r2: {}\n".format(r2)
+    write_to_file("test_results.txt", "gboost", metrics)
+    # write_to_file("test_results.txt", "gboost", rmse)
 
-    write_to_file("test_results.txt", "gboost", rmse)
-
-# tune_gboost()
+tune_gboost()
 
 def tuneAll():
     for name, estimator in estimatorsTuning.items():
@@ -303,7 +304,7 @@ def runInitial():
         metrics = "RMSE: {}\n".format(rmse) + "MAE: {}\n".format(mae) + "r2: {}\n".format(r2)
         write_to_file("test_results.txt", name, metrics)
 
-runInitial()
+# runInitial()
 
 # save model
 import pickle
