@@ -246,13 +246,13 @@ def cross_validate(model, train, test):
     return "{:.10f}".format(rmse_scores.mean())
 
 # creates a file if filename does not exist and appends the model name and rmse to the file
-def write_to_file(filename, model_name, rmse):
+def write_to_file(filename, model_name, metrics):
     if not os.path.exists(filename):
         with open(filename, 'w') as f:
-            f.write(model_name + ", " + rmse + "\n")
+            f.write(model_name + "\n" + metrics + "\n")
     else:
         with open(filename, 'a') as f:
-            f.write(model_name + ", " + rmse + "\n")
+            f.write(model_name + "\n" + metrics + "\n")
     f.close()
 
 
@@ -282,7 +282,8 @@ def tuneAll():
         mae = mean_absolute_error(y_pred_test,y_test) #get mean absolute error
         r2 = r2_score(y_pred_test,y_test) #get r square value
 
-        write_to_file("test_results.txt", name, str(rmse))
+        metrics = "RMSE: {}\n".format(rmse) + "MAE: {}\n".format(mae) + "r2: {}\n".format(r2)
+        write_to_file("test_results.txt", name, metrics)
 
 def runInitial():
     for name, estimator in estimators.items():
@@ -294,11 +295,13 @@ def runInitial():
         mae = mean_absolute_error(y_pred_test,y_test) #get mean absolute error
         r2 = r2_score(y_pred_test,y_test) #get r square value
 
-        print("RMSE :",rmse)
+        print("RMSE: ",rmse)
         print("MAE: ", mae)
         print("r2: ",r2)
         print("")
-        write_to_file("test_results.txt", name, str(rmse))
+        # format a return string metrics that includes rmse, mae, and r2 seperated by new lines
+        metrics = "RMSE: {}\n".format(rmse) + "MAE: {}\n".format(mae) + "r2: {}\n".format(r2)
+        write_to_file("test_results.txt", name, metrics)
 
 runInitial()
 
