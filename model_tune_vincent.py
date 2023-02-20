@@ -54,7 +54,7 @@ x_train, y_train = get_dataset(wt_mt_asn_train)
 x_test, y_test = get_dataset(wt_mt_asn_test)
 
 # create an extensive parameter grid for gradientboostingregressor
-gboostParamGrid = {
+""" gboostParamGrid = {
     'n_estimators': [50, 100, 150, 200, 250, 300, 350, 400],
     'learning_rate': [0.01, 0.05, 0.1, 0.15, 0.2, 0.25],
     'max_depth': [3, 5, 7, 9, 11, 13],
@@ -69,6 +69,20 @@ gboostParamGrid = {
     'validation_fraction': [0.1, 0.15, 0.2],
     'n_iter_no_change': [5, 10, 15, 20],
     'tol': [1e-4, 1e-5, 1e-6]
+} """
+
+gboostParamGrid = {
+    'n_estimators': [50, 100, 200, 300, 500],
+    'learning_rate': [0.01, 0.05, 0.1, 0.2],
+    'subsample': [0.5, 0.7, 0.9, 1.0],
+    'min_samples_split': [2, 5, 10, 20, 50],
+    'min_samples_leaf': [1, 2, 4, 8, 16],
+    'max_depth': [3, 5, 7, 9],
+    'max_features': ['auto', 'sqrt', 'log2', None] + list(range(5, 55, 5)),
+    'alpha': list(np.logspace(-5, 3, num=9, base=10)),
+    'loss': ['ls', 'lad', 'huber', 'quantile'],
+    'criterion': ['friedman_mse', 'mse', 'mae'],
+    'random_state': [42]
 }
 
 xgboostParamGrid = {
@@ -145,7 +159,7 @@ estimators = {
         'gboost': [GradientBoostingRegressor(), gboostParamGrid],
         'xgboost':[XGBRegressor(n_estimators=30), xgboostParamGrid],
         'lgbm':[ltb.LGBMRegressor(n_estimators=30), lgbmParamGrid],
-        # 'svr':[make_pipeline(StandardScaler(), SVR(C=1.0, epsilon=0.2)), svrParamGrid],
+        'svr':[make_pipeline(StandardScaler(), SVR(C=1.0, epsilon=0.2)), svrParamGrid],
         'etr':[ExtraTreesRegressor(n_estimators=30,random_state=209), etrParamGrid],
         # 'rf':RandomForestRegressor(n_estimators=30,random_state=209),
 
@@ -252,7 +266,7 @@ def tune_gboost():
     r2 = r2_score(y_pred_test,y_test) #get r square value
 
     write_to_file("test_results.txt", "gboost", rmse)
-    
+
 tune_gboost()
 
 def tuneAll():
