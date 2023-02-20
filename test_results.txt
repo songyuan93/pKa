@@ -1,33 +1,3 @@
-gboost, 0.809350328846566
-xgboost, 0.788446630041744
-lgbm, 0.8881981158938332
-svr, 0.8830668534739121
-etr, 0.6547065357320659
-gboost
-RMSE: {rmse}
-MAE: {mae}
-r2: {r2}}
-
-xgboost
-RMSE: {rmse}
-MAE: {mae}
-r2: {r2}}
-
-lgbm
-RMSE: {rmse}
-MAE: {mae}
-r2: {r2}}
-
-svr
-RMSE: {rmse}
-MAE: {mae}
-r2: {r2}}
-
-etr
-RMSE: {rmse}
-MAE: {mae}
-r2: {r2}}
-
 gboost
 0.8044548578109665
 0.5607097829903421
