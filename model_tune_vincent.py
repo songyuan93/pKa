@@ -153,11 +153,11 @@ etrParamGrid = {
 # kernel = ConstantKernel(1.0) + ConstantKernel(1.0) * RBF(10)  + WhiteKernel(5)
 estimators = {
         #Vincent's model
-        'gboost': [GradientBoostingRegressor(), gboostParamGrid],
-        'xgboost':[XGBRegressor(n_estimators=30), xgboostParamGrid],
-        'lgbm':[ltb.LGBMRegressor(n_estimators=30), lgbmParamGrid],
-        'svr':[make_pipeline(StandardScaler(), SVR(C=1.0, epsilon=0.2)), svrParamGrid],
-        'etr':[ExtraTreesRegressor(n_estimators=30,random_state=209), etrParamGrid],
+        'gboost': GradientBoostingRegressor(),
+        'xgboost':XGBRegressor(n_estimators=30),
+        'lgbm':ltb.LGBMRegressor(n_estimators=30),
+        'svr':make_pipeline(StandardScaler(), SVR(C=1.0, epsilon=0.2)),
+        'etr':ExtraTreesRegressor(n_estimators=30,random_state=209),
         # 'rf':RandomForestRegressor(n_estimators=30,random_state=209),
 
         #logan's model
@@ -267,7 +267,7 @@ def tune_gboost():
 
     write_to_file("test_results.txt", "gboost", rmse)
 
-tune_gboost()
+# tune_gboost()
 
 def tuneAll():
     for name, estimator in estimatorsTuning.items():
@@ -282,21 +282,25 @@ def tuneAll():
         mae = mean_absolute_error(y_pred_test,y_test) #get mean absolute error
         r2 = r2_score(y_pred_test,y_test) #get r square value
 
-        write_to_file("test_results.txt", name, rmse)
+        write_to_file("test_results.txt", name, str(rmse))
 
-# for name, estimator in estimators.items():
-    
-#     print(name)
-#     model = estimator.fit(x_train,y_train)
-#     y_pred_test = model.predict(x_test)
-#     rmse = mean_squared_error(y_pred_test,y_test)**0.5 #get root mean square error
-#     mae = mean_absolute_error(y_pred_test,y_test) #get mean absolute error
-#     r2 = r2_score(y_pred_test,y_test) #get r square value
+def runInitial():
+    for name, estimator in estimators.items():
+        
+        print(name)
+        model = estimator.fit(x_train,y_train)
+        y_pred_test = model.predict(x_test)
+        rmse = mean_squared_error(y_pred_test,y_test)**0.5 #get root mean square error
+        mae = mean_absolute_error(y_pred_test,y_test) #get mean absolute error
+        r2 = r2_score(y_pred_test,y_test) #get r square value
 
-#     print("RMSE :",rmse)
-#     print("MAE: ", mae)
-#     print("r2: ",r2)
-#     print("")
+        print("RMSE :",rmse)
+        print("MAE: ", mae)
+        print("r2: ",r2)
+        print("")
+        write_to_file("test_results.txt", name, str(rmse))
+
+runInitial()
 
 # save model
 import pickle
