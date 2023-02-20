@@ -80,7 +80,7 @@ xgboostParamGrid = {
     'colsample_bytree': [0.5, 0.6, 0.7, 0.8, 0.9],
     'reg_alpha': [0, 0.1, 0.5, 1, 2],
     'reg_lambda': [0, 0.1, 0.5, 1, 2],
-    'n_estimators': [50, 100, 150, 200, 250, 300],
+    'n_estimators': [30, 50, 100, 150, 200, 250, 300],
     'objective': ['reg:squarederror', 'reg:linear', 'reg:gamma'],
     'booster': ['gbtree', 'gblinear', 'dart'],
     'tree_method': ['auto', 'exact', 'approx', 'hist'],
@@ -145,7 +145,7 @@ estimators = {
         'gboost': [GradientBoostingRegressor(), gboostParamGrid],
         'xgboost':[XGBRegressor(n_estimators=30), xgboostParamGrid],
         'lgbm':[ltb.LGBMRegressor(n_estimators=30), lgbmParamGrid],
-        'svr':[make_pipeline(StandardScaler(), SVR(C=1.0, epsilon=0.2)), svrParamGrid],
+        # 'svr':[make_pipeline(StandardScaler(), SVR(C=1.0, epsilon=0.2)), svrParamGrid],
         'etr':[ExtraTreesRegressor(n_estimators=30,random_state=209), etrParamGrid],
         # 'rf':RandomForestRegressor(n_estimators=30,random_state=209),
 
@@ -159,6 +159,15 @@ estimators = {
         # 'gp':GPR(kernel=kernel,n_restarts_optimizer=9).fit(x_train,y_train)
         }
 
+estimatorsTuning = {
+        #Vincent's model
+        'gboost': [GradientBoostingRegressor(), gboostParamGrid],
+        'xgboost':[XGBRegressor(), xgboostParamGrid],
+        'lgbm':[ltb.LGBMRegressor(), lgbmParamGrid],
+        'svr':[make_pipeline(StandardScaler(), SVR()), svrParamGrid],
+        'etr':[ExtraTreesRegressor(), etrParamGrid],
+        # 'rf':RandomForestRegressor(n_estimators=30,random_state=209),
+}
 
 # ignore this method. not using this one
 # for name, estimator in estimators.items(): fine tune the model for test dataset
@@ -205,8 +214,8 @@ def saveFeaturesImportance(grid_search, name, data):
         f.write(sorted(zip(feature_importance, num_attributes), reverse=True))
         
 
-def hyperparamterTuning(model, param_grid, x_test, y_test, name):
-    grid_search = GridSearchCV(model, param_grid, cv=5, scoring='neg_mean_squared_error')
+def hyperparamterTuning(model, param_grid, name, x_test, y_test):
+    grid_search = GridSearchCV(model, param_grid=param_grid, cv=5, scoring='neg_mean_squared_error')
     grid_search.fit(x_test, y_test)
     bestParam = grid_search.best_params_
     bestScore = grid_search.best_score_
@@ -233,22 +242,33 @@ def write_to_file(filename, model_name, rmse):
             f.write(model_name + ", " + rmse + "\n")
 
 
-
-
-
-for name, estimator in estimators.items():
-    # perform a grid search on each model
-    # save parameters and score
-    # with the best model predict on test set
-    # print out the results
-    best_estimator = hyperparamterTuning(estimator[0], name, estimator[1], x_train, y_train)
+# gradient boosting regressor
+def tune_gboost():
+    best_estimator = hyperparamterTuning(GradientBoostingRegressor(),gboostParamGrid,"gboost", x_train, y_train)
     y_pred_test = best_estimator.predict(x_test)
 
-    rmse = mean_squared_error(y_pred_test,y_test)**0.5 #get root mean square error
+    rmse = np.sqrt(mean_squared_error(y_pred_test,y_test)) #get root mean square error
     mae = mean_absolute_error(y_pred_test,y_test) #get mean absolute error
     r2 = r2_score(y_pred_test,y_test) #get r square value
 
-    write_to_file("test_results.txt", name, rmse)
+    write_to_file("test_results.txt", "gboost", rmse)
+    
+tune_gboost()
+
+def tuneAll():
+    for name, estimator in estimatorsTuning.items():
+        # perform a grid search on each model
+        # save parameters and score
+        # with the best model predict on test set
+        # print out the results
+        best_estimator = hyperparamterTuning(estimator[0], name, estimator[1], x_train, y_train)
+        y_pred_test = best_estimator.predict(x_test)
+
+        rmse = np.sqrt(mean_squared_error(y_pred_test,y_test)) #get root mean square error
+        mae = mean_absolute_error(y_pred_test,y_test) #get mean absolute error
+        r2 = r2_score(y_pred_test,y_test) #get r square value
+
+        write_to_file("test_results.txt", name, rmse)
 
 # for name, estimator in estimators.items():
     
