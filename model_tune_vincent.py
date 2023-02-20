@@ -255,10 +255,41 @@ def write_to_file(filename, model_name, metrics):
             f.write(model_name + "\n" + metrics + "\n")
     f.close()
 
+def evaluate(model, test_features, test_labels):
+    predictions = model.predict(test_features)
+    errors = abs(predictions - test_labels)
+    mape = 100 * np.mean(errors / test_labels)
+    accuracy = 100 - mape
+    print('Model Performance')
+    print('Average Error: {:0.4f} degrees.'.format(np.mean(errors)))
+    print('Accuracy = {:0.2f}%.'.format(accuracy))
+    
+    return accuracy
+
+def checkImprovement(name, base_model, improved_model, test_features, test_labels):
+    base_accuracy = evaluate(base_model, test_features, test_labels)
+    improved_accuracy = evaluate(improved_model, test_features, test_labels)
+    with open("improvements.txt", 'utf8') as f:
+        f.write(name + "\nImprovement of {:0.2f}%.".format( 100 * (improved_accuracy - base_accuracy) / base_accuracy))
+    f.close()
+    # print('Improvement of {:0.2f}%.'.format( 100 * (improved_accuracy - base_accuracy) / base_accuracy))
+
+from bayes_opt import BayesianOptimization
+# fine tune model with bayesian optimization
+def bayesianOptimization(bounds, fittedModel):
+    optimizer = BayesianOptimization(
+    f=fittedModel,
+    pbounds=bounds,
+    random_state=1,
+    )
+    optimizer.maximize(init_points=10, n_iter=50)
+    optimizer.max
+
 
 # gradient boosting regressor
 def tune_gboost():
     best_estimator = hyperparamterTuning(GradientBoostingRegressor(),gboostParamGrid,"gboost", x_train, y_train)
+    checkImprovement("gboost", GradientBoostingRegressor().fit(x_train,y_train), best_estimator, x_test, y_test)
     y_pred_test = best_estimator.predict(x_test)
 
     rmse = np.sqrt(mean_squared_error(y_pred_test,y_test)) #get root mean square error
