@@ -212,6 +212,7 @@ def saveParamterMetrics(grid_search, name):
         for mean_score, params in zip(grid_search.cv_results_['mean_test_score'], grid_search.cv_results_['params']):
             f.write("%0.10f,%r" % (np.sqrt(-mean_score), params))
             f.write("\n")
+    f.close()
 
 # save features_importance to csv file
 def saveFeaturesImportance(grid_search, name, data):
@@ -226,6 +227,7 @@ def saveFeaturesImportance(grid_search, name, data):
             
     with open(filename, 'a') as f:
         f.write(sorted(zip(feature_importance, num_attributes), reverse=True))
+    f.close()
         
 
 def hyperparamterTuning(model, param_grid, name, x_test, y_test):
@@ -254,6 +256,7 @@ def write_to_file(filename, model_name, rmse):
     else:
         with open(filename, 'a') as f:
             f.write(model_name + ", " + rmse + "\n")
+    f.close()
 
 
 # gradient boosting regressor
