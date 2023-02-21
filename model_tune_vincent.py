@@ -326,7 +326,7 @@ def bayesianOptimization(bounds, fittedModel, name):
     optimizer.maximize(init_points=10, n_iter=100)
     # save the best parameters to a file with the model name
     with open("bayesian_optimization/"+name+".csv", 'utf8') as f:
-        f.write(str(optimizer.max['target'])+","+str(optimizer.max) + "\n")
+        f.write(str(-optimizer.max['target'])+","+str(optimizer.max) + "\n")
         # write the score of the best parameters to a file
         # f.write(str(optimizer.max['target']) + "\n")
     f.close()
@@ -345,7 +345,7 @@ def gb_regression_cv(n_estimators, learning_rate, max_depth, min_samples_split, 
         random_state=56
     )
     # use cross-validation to estimate the model's RMSE
-    rmse = -cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
+    rmse = cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
 
     return rmse
 
@@ -366,7 +366,7 @@ def xgb_evaluate(n_estimators, learning_rate, max_depth, min_child_weight, subsa
     )
 
     # use cross-validation to estimate the model's RMSE
-    rmse = -cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
+    rmse = cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
 
     return rmse
 
@@ -385,7 +385,7 @@ def lgbm_evaluate(learning_rate, max_depth, num_leaves, feature_fraction, baggin
     )
     
     # use cross-validation to estimate the model's RMSE
-    rmse = -cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
+    rmse = cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
 
     return rmse
 
@@ -396,7 +396,7 @@ def svr_evaluate(C, gamma, epsilon):
         ('svr', SVR(C=C, gamma=gamma, epsilon=epsilon))
     ])
     # use cross-validation to estimate the model's RMSE
-    rmse = -cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
+    rmse = cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
 
     return rmse
 
@@ -408,10 +408,10 @@ def extratree_evaluate(n_estimators, max_features, max_depth, min_samples_split,
         max_depth=int(max_depth),
         min_samples_split=int(min_samples_split),
         min_samples_leaf=int(min_samples_leaf),
-        random_state=1
+        random_state=56
     )
     # use cross-validation to estimate the model's RMSE
-    rmse = -cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
+    rmse = cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
 
     return rmse
 """ 
