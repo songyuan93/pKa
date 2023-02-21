@@ -150,29 +150,60 @@ etrParamGrid = {
 }
 
 gboostBounds = {
-    'n_estimators': (50, 500),
-    'learning_rate': (0.01, 0.2),
-    'max_depth': (3, 9),
+    'n_estimators': (10, 1000),
+    'learning_rate': (0.01, 1),
+    'max_depth': (1, 10),
     'min_samples_split': (2, 50),
-    'min_samples_leaf': (1, 16),
-    'subsample': (0.5, 1.0),
-    'alpha': (0.0, 0.99),
+    'min_samples_leaf': (1, 20),
+    'subsample': (0.1, 1.0),
+    'alpha': (0.01, 0.99),
 }
 
 xgboostBounds = {
-
+    'n_estimators': (10, 1000),  # number of boosting stages to perform
+    'learning_rate': (0.01, 1.0),  # learning rate shrinks the contribution of each tree
+    'max_depth': (1, 20),  # maximum depth of a tree
+    'min_child_weight': (1, 20),  # minimum sum of instance weight (hessian) needed in a child
+    'subsample': (0.1, 1.0),  # fraction of samples to be used for fitting the individual base learners
+    'colsample_bytree': (0.1, 1.0),  # fraction of columns to be randomly subsampled for each tree
+    'gamma': (0, 5),  # minimum loss reduction required to make a further partition on a leaf node
+    'alpha': (0.0, 1.0),  # L1 regularization term on weights
 }
-
+pbounds = {
+    'n_estimators': (10, 1000),  # number of boosting stages to perform
+    'learning_rate': (0.01, 1),
+    'max_depth': (1, 20),
+    'min_child_weight': (1, 20),
+    'subsample': (0.1, 1),
+    'colsample_bytree': (0.1, 1),
+    'gamma': (0, 5),
+    'reg_alpha': (0, 1),
+    'reg_lambda': (0, 1)
+}
 lgbmBounds = {
-
+    'learning_rate': (0.001, 0.1),
+    'max_depth': (2, 15),
+    'num_leaves': (10, 300),
+    'feature_fraction': (0.1, 1),
+    'bagging_fraction': (0.1, 1),
+    'bagging_freq': (1, 10),
+    'min_child_samples': (5, 50),
+    'lambda_l1': (0, 1),
+    'lambda_l2': (0, 1)
 }
 
 svrBounds = {
-
+    'C': (0.1, 100),
+    'gamma': (0.0001, 10),
+    'epsilon': (0.01, 1)
 }
 
 etrBounds = {
-
+    'n_estimators': (10, 1000),
+    'max_features': ('sqrt', 'log2'),
+    'max_depth': (2, 50),
+    'min_samples_split': (2, 50),
+    'min_samples_leaf': (1, 10)
 }
 # kernel = ConstantKernel(1.0) + ConstantKernel(1.0) * RBF(10)  + WhiteKernel(5)
 estimators = {
@@ -203,6 +234,8 @@ estimatorsTuning = {
         'etr':[ExtraTreesRegressor(), etrParamGrid],
         # 'rf':RandomForestRegressor(n_estimators=30,random_state=209),
 }
+
+
 
 def saveParamterMetrics(grid_search, name):
     #save the parameter and metrics to csv file
@@ -292,14 +325,16 @@ def bayesianOptimization(bounds, fittedModel, name):
     )
     optimizer.maximize(init_points=10, n_iter=100)
     # save the best parameters to a file with the model name
-    with open("bayesian_optimization/"+name+".txt", 'utf8') as f:
-        f.write(str(optimizer.max) + "\n")
+    with open("bayesian_optimization/"+name+".csv", 'utf8') as f:
+        f.write(str(optimizer.max['target'])+","+str(optimizer.max) + "\n")
+        # write the score of the best parameters to a file
+        # f.write(str(optimizer.max['target']) + "\n")
     f.close()
     return optimizer.max['params']
     # optimizer.max
 
 def gb_regression_cv(n_estimators, learning_rate, max_depth, min_samples_split, min_samples_leaf, subsample, alpha):
-    gb = GradientBoostingRegressor(
+    model = GradientBoostingRegressor(
         n_estimators=int(n_estimators),
         learning_rate=learning_rate,
         max_depth=int(max_depth),
@@ -309,9 +344,77 @@ def gb_regression_cv(n_estimators, learning_rate, max_depth, min_samples_split, 
         alpha=alpha,
         random_state=56
     )
-    return np.mean(cross_val_score(gb, x_train, y_train, cv=10, scoring='neg_mean_squared_error'))
+    # use cross-validation to estimate the model's RMSE
+    rmse = -cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
 
+    return rmse
 
+def xgb_evaluate(n_estimators, learning_rate, max_depth, min_child_weight, subsample, colsample_bytree, gamma, reg_alpha, reg_lambda):
+    # create the XGBRegressor model with the specified hyperparameters
+    model = XGBRegressor(
+        objective='reg:squarederror',
+        n_estimators=int(n_estimators),
+        learning_rate=learning_rate,
+        max_depth=int(max_depth),
+        min_child_weight=int(min_child_weight),
+        subsample=subsample,
+        colsample_bytree=colsample_bytree,
+        gamma=gamma,
+        reg_alpha=reg_alpha,
+        reg_lambda=reg_lambda,
+        n_jobs=-1
+    )
+
+    # use cross-validation to estimate the model's RMSE
+    rmse = -cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
+
+    return rmse
+
+def lgbm_evaluate(learning_rate, max_depth, num_leaves, feature_fraction, bagging_fraction, bagging_freq, min_child_samples, lambda_l1, lambda_l2):
+    # create the model with the specified hyperparameters
+    model = ltb.LGBMRegressor(
+        learning_rate=learning_rate,
+        max_depth=int(max_depth),
+        num_leaves=int(num_leaves),
+        feature_fraction=max(min(feature_fraction, 1), 0),
+        bagging_fraction=max(min(bagging_fraction, 1), 0),
+        bagging_freq=int(bagging_freq),
+        min_child_samples=int(min_child_samples),
+        lambda_l1=lambda_l1,
+        lambda_l2=lambda_l2
+    )
+    
+    # use cross-validation to estimate the model's RMSE
+    rmse = -cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
+
+    return rmse
+
+def svr_evaluate(C, gamma, epsilon):
+    # create the pipeline with a StandardScaler and SVR model
+    model = make_pipeline([
+        ('scaler', StandardScaler()),
+        ('svr', SVR(C=C, gamma=gamma, epsilon=epsilon))
+    ])
+    # use cross-validation to estimate the model's RMSE
+    rmse = -cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
+
+    return rmse
+
+def extratree_evaluate(n_estimators, max_features, max_depth, min_samples_split, min_samples_leaf):
+    # create the ExtraTreesRegressor model with the specified hyperparameters
+    model = ExtraTreesRegressor(
+        n_estimators=int(n_estimators),
+        max_features=max_features,
+        max_depth=int(max_depth),
+        min_samples_split=int(min_samples_split),
+        min_samples_leaf=int(min_samples_leaf),
+        random_state=1
+    )
+    # use cross-validation to estimate the model's RMSE
+    rmse = -cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
+
+    return rmse
+""" 
 # gradient boosting regressor
 def tune_gboost():
     best_estimator = hyperparamterTuning(GradientBoostingRegressor(),gboostParamGrid,"gboost", x_train, y_train)
@@ -361,7 +464,7 @@ def runInitial():
         metrics = "RMSE: {}\n".format(rmse) + "MAE: {}\n".format(mae) + "r2: {}\n".format(r2)
         write_to_file("test_results.txt", name, metrics)
 
-# runInitial()
+# runInitial() """
 
 # save model
 import pickle
@@ -371,21 +474,22 @@ def save_model(model, model_name):
         pickle.dump(model, file)
         file.close
 
+estimatorsBayesian = {
+        #Vincent's model
+        'gboost': [gb_regression_cv, gboostBounds],
+        'xgboost':[xgb_evaluate, xgboostBounds],
+        'lgbm':[lgbm_evaluate, lgbmBounds],
+        'svr':[svr_evaluate, svrBounds],
+        'etr':[extratree_evaluate, etrBounds],
+        # 'rf':RandomForestRegressor(n_estimators=30,random_state=209),
+}
 
-best_gboost_param = bayesianOptimization(gboostBounds, gb_regression_cv, "gboost")
-gb = GradientBoostingRegressor(
-    n_estimators=int(best_gboost_param['n_estimators']),
-    learning_rate=best_gboost_param['learning_rate'],
-    max_depth=int(best_gboost_param['max_depth']),
-    min_samples_split=int(best_gboost_param['min_samples_split']),
-    min_samples_leaf=int(best_gboost_param['min_samples_leaf']),
-    subsample=best_gboost_param['subsample'],
-    alpha=best_gboost_param['alpha'],
-    random_state=56
-)
-
-gb.fit(x_train, y_train)
-
-# Save the feature importances
-feature_importances = gb.feature_importances_
-np.savetxt('gb_feature_importances.csv', feature_importances, delimiter=',')
+for name, estimator in estimatorsBayesian.items():
+    fittedModel = estimator[0]
+    bounds = estimator[1]
+    best_params = bayesianOptimization(bounds, fittedModel, name)
+    model = fittedModel(**best_params)
+    model.fit(x_train, y_train)
+    feature_importances = model.feature_importances_
+    np.savetxt(name+'_feature_importances.csv', feature_importances, delimiter=',')
+    save_model(model, name)
