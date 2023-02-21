@@ -323,7 +323,7 @@ def bayesianOptimization(bounds, fittedModel, name):
         pbounds=bounds,
         random_state=56,
     )
-    optimizer.maximize(init_points=10, n_iter=100)
+    optimizer.maximize(init_points=10, n_iter=10)
     # save the best parameters to a file with the model name
     with open("bayesian_optimization/"+name+".csv", 'utf8') as f:
         f.write(str(-optimizer.max['target'])+","+str(optimizer.max) + "\n")
