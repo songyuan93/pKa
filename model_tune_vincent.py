@@ -149,7 +149,31 @@ etrParamGrid = {
     'random_state': [42]
 }
 
+gboostBounds = {
+    'n_estimators': (50, 500),
+    'learning_rate': (0.01, 0.2),
+    'max_depth': (3, 9),
+    'min_samples_split': (2, 50),
+    'min_samples_leaf': (1, 16),
+    'subsample': (0.5, 1.0),
+    'alpha': (0.0, 0.99),
+}
 
+xgboostBounds = {
+
+}
+
+lgbmBounds = {
+
+}
+
+svrBounds = {
+
+}
+
+etrBounds = {
+
+}
 # kernel = ConstantKernel(1.0) + ConstantKernel(1.0) * RBF(10)  + WhiteKernel(5)
 estimators = {
         #Vincent's model
@@ -179,23 +203,6 @@ estimatorsTuning = {
         'etr':[ExtraTreesRegressor(), etrParamGrid],
         # 'rf':RandomForestRegressor(n_estimators=30,random_state=209),
 }
-
-# ignore this method. not using this one
-# for name, estimator in estimators.items(): fine tune the model for test dataset
-def fine_tune_model(model, param_grid, x_train, y_train, x_test, y_test):
-    grid_search = GridSearchCV(model, param_grid, cv=5, scoring='neg_mean_squared_error')
-    grid_search.fit(x_train, y_train)
-    print(grid_search.best_params_)
-    print(grid_search.best_score_)
-    y_pred_test = grid_search.predict(x_test)
-    rmse = mean_squared_error(y_pred_test,y_test)**0.5 #get root mean square error
-    mae = mean_absolute_error(y_pred_test,y_test) #get mean absolute error
-    r2 = r2_score(y_pred_test,y_test) #get r square value
-
-    print("RMSE :",rmse)
-    print("MAE: ", mae)
-    print("r2: ", r2)
-    print("")
 
 def saveParamterMetrics(grid_search, name):
     #save the parameter and metrics to csv file
@@ -270,20 +277,39 @@ def checkImprovement(name, base_model, improved_model, test_features, test_label
     base_accuracy = evaluate(base_model, test_features, test_labels)
     improved_accuracy = evaluate(improved_model, test_features, test_labels)
     with open("improvements.txt", 'utf8') as f:
-        f.write(name + "\nImprovement of {:0.2f}%.".format( 100 * (improved_accuracy - base_accuracy) / base_accuracy))
+        f.write(name + "\nImprovement of {:0.2f}%.\n".format( 100 * (improved_accuracy - base_accuracy) / base_accuracy))
+        f.write("with parameters: " + str(improved_model.get_params()) + "\n")
     f.close()
     # print('Improvement of {:0.2f}%.'.format( 100 * (improved_accuracy - base_accuracy) / base_accuracy))
 
 from bayes_opt import BayesianOptimization
 # fine tune model with bayesian optimization
-def bayesianOptimization(bounds, fittedModel):
+def bayesianOptimization(bounds, fittedModel, name):
     optimizer = BayesianOptimization(
-    f=fittedModel,
-    pbounds=bounds,
-    random_state=1,
+        f=fittedModel,
+        pbounds=bounds,
+        random_state=56,
     )
-    optimizer.maximize(init_points=10, n_iter=50)
-    optimizer.max
+    optimizer.maximize(init_points=10, n_iter=100)
+    # save the best parameters to a file with the model name
+    with open("bayesian_optimization/"+name+".txt", 'utf8') as f:
+        f.write(str(optimizer.max) + "\n")
+    f.close()
+    return optimizer.max['params']
+    # optimizer.max
+
+def gb_regression_cv(n_estimators, learning_rate, max_depth, min_samples_split, min_samples_leaf, subsample, alpha):
+    gb = GradientBoostingRegressor(
+        n_estimators=int(n_estimators),
+        learning_rate=learning_rate,
+        max_depth=int(max_depth),
+        min_samples_split=int(min_samples_split),
+        min_samples_leaf=int(min_samples_leaf),
+        subsample=subsample,
+        alpha=alpha,
+        random_state=56
+    )
+    return np.mean(cross_val_score(gb, x_train, y_train, cv=10, scoring='neg_mean_squared_error'))
 
 
 # gradient boosting regressor
@@ -299,7 +325,7 @@ def tune_gboost():
     write_to_file("test_results.txt", "gboost", metrics)
     # write_to_file("test_results.txt", "gboost", rmse)
 
-tune_gboost()
+# tune_gboost()
 
 def tuneAll():
     for name, estimator in estimatorsTuning.items():
@@ -344,3 +370,22 @@ def save_model(model, model_name):
     with open(filename, 'wb') as file:
         pickle.dump(model, file)
         file.close
+
+
+best_gboost_param = bayesianOptimization(gboostBounds, gb_regression_cv, "gboost")
+gb = GradientBoostingRegressor(
+    n_estimators=int(best_gboost_param['n_estimators']),
+    learning_rate=best_gboost_param['learning_rate'],
+    max_depth=int(best_gboost_param['max_depth']),
+    min_samples_split=int(best_gboost_param['min_samples_split']),
+    min_samples_leaf=int(best_gboost_param['min_samples_leaf']),
+    subsample=best_gboost_param['subsample'],
+    alpha=best_gboost_param['alpha'],
+    random_state=56
+)
+
+gb.fit(x_train, y_train)
+
+# Save the feature importances
+feature_importances = gb.feature_importances_
+np.savetxt('gb_feature_importances.csv', feature_importances, delimiter=',')
