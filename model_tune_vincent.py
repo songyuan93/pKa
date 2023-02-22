@@ -292,18 +292,23 @@ def evaluate(model, test_features, test_labels):
     errors = abs(predictions - test_labels)
     mape = 100 * np.mean(errors / test_labels)
     accuracy = 100 - mape
-    print('Model Performance')
-    print('Average Error: {:0.4f} degrees.'.format(np.mean(errors)))
-    print('Accuracy = {:0.2f}%.'.format(accuracy))
+    # print('Model Performance')
+    # print('Average Error: {:0.4f} degrees.'.format(np.mean(errors)))
+    # print('Accuracy = {:0.2f}%.'.format(accuracy))
     
     return accuracy
 
-def checkImprovement(name, base_model, improved_model, test_features, test_labels):
-    base_accuracy = evaluate(base_model, test_features, test_labels)
-    improved_accuracy = evaluate(improved_model, test_features, test_labels)
-    with open("improvements.txt", 'utf8') as f:
-        f.write(name + "\nImprovement of {:0.2f}%.\n".format( 100 * (improved_accuracy - base_accuracy) / base_accuracy))
-        f.write("with parameters: " + str(improved_model.get_params()) + "\n")
+def checkImprovement(name, base_model, optimal):
+    base_accuracy = np.sqrt(mean_squared_error(base_model.fit(x_train,y_train).predict(x_test), y_test))
+    improved_accuracy = -optimal["target"]
+    filename = "improvements.txt"
+    
+    if not os.path.exists(filename):
+        open(filename, 'x').close()
+
+    with open(filename, 'a') as f:
+        f.write(name + "\nImprovement of {:0.4f}%.\n".format( 100 * (improved_accuracy - base_accuracy) / base_accuracy))
+        f.write("with parameters: " + str(optimal["params"]) + "\n")
     f.close()
     # print('Improvement of {:0.2f}%.'.format( 100 * (improved_accuracy - base_accuracy) / base_accuracy))
 
@@ -315,7 +320,7 @@ def bayesianOptimization(bounds, fittedModel, name):
         pbounds=bounds,
         random_state=56,
     )
-    optimizer.maximize(init_points=1, n_iter=1)
+    optimizer.maximize(init_points=10, n_iter=200)
     # save the best parameters to a file with the model name
     new_folder_name = "bayesian_optimization"
     if not os.path.exists(new_folder_name):
@@ -328,9 +333,9 @@ def bayesianOptimization(bounds, fittedModel, name):
         open(filename, 'x').close()
 
     with open(filename, 'a') as f:
-        f.write(str(-optimizer.max['target'])+","+str(optimizer.max) + "\n")
+        f.write(str(-optimizer.max['target'])+","+str(optimizer.max['params']) + "\n")
     f.close()
-    return optimizer.max['params']
+    return optimizer.max
     # optimizer.max
 
 def gb_regression_cv(n_estimators, learning_rate, max_depth, min_samples_split, min_samples_leaf, subsample, alpha):
@@ -393,8 +398,8 @@ def svr_evaluate(C, gamma, epsilon, degree):
     # create the pipeline with a StandardScaler and SVR model
     model = make_pipeline(StandardScaler(), SVR(C=C, gamma=gamma, epsilon=epsilon, degree=int(degree)))
     
-    # Perform 5-fold cross-validation
-    kf = KFold(n_splits=5, shuffle=True, random_state=42)
+    # Perform 10-fold cross-validation
+    kf = KFold(n_splits=10, shuffle=True, random_state=56)
     # use cross-validation to estimate the model's RMSE
     rmse = cross_val_score(model, x_train, y_train, cv=kf, scoring='neg_root_mean_squared_error', error_score='raise').mean()
 
@@ -488,8 +493,9 @@ for name, estimator in estimatorsBayesian.items():
     fittedModel = estimator[0]
     bounds = estimator[1]
     print(name)
-    best_params = bayesianOptimization(bounds, fittedModel, name)
-    # model = estimatorsTuning[name][0]
+    bestTargetParams = bayesianOptimization(bounds, fittedModel, name)
+    model = estimatorsTuning[name][0]
+    checkImprovement(name, model, bestTargetParams)
     # model = fittedModel(**best_params)
     # model.fit(x_train, y_train, **best_params)
     # feature_importances = model.feature_importances_
