@@ -320,7 +320,7 @@ def bayesianOptimization(bounds, fittedModel, name):
         pbounds=bounds,
         random_state=56,
     )
-    optimizer.maximize(init_points=10, n_iter=200)
+    optimizer.maximize(init_points=10, n_iter=500)
     # save the best parameters to a file with the model name
     new_folder_name = "bayesian_optimization"
     if not os.path.exists(new_folder_name):
