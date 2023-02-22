@@ -1,3 +1,12 @@
 gboost
 Improvement of -0.0551%.
 with parameters: {'alpha': 0.01, 'learning_rate': 0.01, 'max_depth': 10.0, 'min_samples_leaf': 1.0, 'min_samples_split': 42.909062183203595, 'n_estimators': 990.1555112243426, 'subsample': 1.0}
+xgboost
+Improvement of 9.0104%.
+with parameters: {'colsample_bytree': 0.766226193022905, 'gamma': 2.4969644325675784, 'learning_rate': 0.016711709650677663, 'max_depth': 16.711356372527195, 'min_child_weight': 1.1236862376768966, 'n_estimators': 795.4138958803843, 'reg_alpha': 0.31071171530416064, 'reg_lambda': 0.8216524213313933, 'subsample': 0.5061845727026008}
+lgbm
+Improvement of -2.4450%.
+with parameters: {'bagging_fraction': 0.9779325496127981, 'bagging_freq': 9.068090705887423, 'feature_fraction': 0.6085006505466397, 'lambda_l1': 0.9965168278465408, 'lambda_l2': 0.021622361453081197, 'learning_rate': 0.1, 'max_depth': 6.7757327319577625, 'min_child_samples': 5.7876423289511765, 'num_leaves': 20.52307259233567}
+svr
+Improvement of -8.1630%.
+with parameters: {'C': 40.98514566520707, 'degree': 1.4356671026136008, 'epsilon': 0.07745575493924553, 'gamma': 0.019434483644226425}

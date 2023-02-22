@@ -308,7 +308,7 @@ def checkImprovement(name, base_model, optimal):
 
     with open(filename, 'a') as f:
         f.write(name + "\nImprovement of {:0.4f}%.\n".format( 100 * (improved_accuracy - base_accuracy) / base_accuracy))
-        f.write("with parameters: " + str(optimal["params"]) + "\n")
+        f.write("with parameters: " + str(optimal["params"]) + "\n\n")
     f.close()
     # print('Improvement of {:0.2f}%.'.format( 100 * (improved_accuracy - base_accuracy) / base_accuracy))
 
@@ -318,7 +318,7 @@ def bayesianOptimization(bounds, fittedModel, name):
     optimizer = BayesianOptimization(
         f=fittedModel,
         pbounds=bounds,
-        random_state=56,
+        random_state=24,
     )
     optimizer.maximize(init_points=10, n_iter=500)
     # save the best parameters to a file with the model name
