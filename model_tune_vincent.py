@@ -4,7 +4,7 @@ import numpy as np  #data manipulate package
 import pandas as pd #data loading package
 #import the metrics test machine learning models
 from sklearn.metrics import mean_absolute_error,mean_squared_error, r2_score
-from sklearn.model_selection import GridSearchCV, cross_val_score
+from sklearn.model_selection import GridSearchCV, cross_val_score, KFold
 
 
 from xgboost import XGBRegressor
@@ -160,26 +160,17 @@ gboostBounds = {
 }
 
 xgboostBounds = {
-    'n_estimators': (10, 1000),  # number of boosting stages to perform
-    'learning_rate': (0.01, 1.0),  # learning rate shrinks the contribution of each tree
+    'n_estimators': (1, 1000),  # number of boosting stages to perform
+    'learning_rate': (0.01, 1),  # learning rate shrinks the contribution of each tree
     'max_depth': (1, 20),  # maximum depth of a tree
     'min_child_weight': (1, 20),  # minimum sum of instance weight (hessian) needed in a child
-    'subsample': (0.1, 1.0),  # fraction of samples to be used for fitting the individual base learners
-    'colsample_bytree': (0.1, 1.0),  # fraction of columns to be randomly subsampled for each tree
-    'gamma': (0, 5),  # minimum loss reduction required to make a further partition on a leaf node
-    'alpha': (0.0, 1.0),  # L1 regularization term on weights
+    'subsample': (0.1, 1),  # fraction of samples to be used for fitting the individual base learners
+    'colsample_bytree': (0.1, 1),  # fraction of columns to be randomly subsampled for each tree
+    'gamma': (0, 5),    # minimum loss reduction required to make a further partition on a leaf node
+    'reg_alpha': (0, 1),    # L1 regularization term on weights
+    'reg_lambda': (0, 1)    # L2 regularization term on weights
 }
-pbounds = {
-    'n_estimators': (10, 1000),  # number of boosting stages to perform
-    'learning_rate': (0.01, 1),
-    'max_depth': (1, 20),
-    'min_child_weight': (1, 20),
-    'subsample': (0.1, 1),
-    'colsample_bytree': (0.1, 1),
-    'gamma': (0, 5),
-    'reg_alpha': (0, 1),
-    'reg_lambda': (0, 1)
-}
+
 lgbmBounds = {
     'learning_rate': (0.001, 0.1),
     'max_depth': (2, 15),
@@ -195,12 +186,13 @@ lgbmBounds = {
 svrBounds = {
     'C': (0.1, 100),
     'gamma': (0.0001, 10),
-    'epsilon': (0.01, 1)
+    'epsilon': (0.01, 1),
+    'degree': (1, 10),
 }
 
 etrBounds = {
     'n_estimators': (10, 1000),
-    'max_features': ('sqrt', 'log2'),
+    'max_features': (0.1, 1),
     'max_depth': (2, 50),
     'min_samples_split': (2, 50),
     'min_samples_leaf': (1, 10)
@@ -235,7 +227,7 @@ estimatorsTuning = {
         # 'rf':RandomForestRegressor(n_estimators=30,random_state=209),
 }
 
-
+CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def saveParamterMetrics(grid_search, name):
     #save the parameter and metrics to csv file
@@ -323,14 +315,20 @@ def bayesianOptimization(bounds, fittedModel, name):
         pbounds=bounds,
         random_state=56,
     )
-    optimizer.maximize(init_points=10, n_iter=10)
+    optimizer.maximize(init_points=1, n_iter=1)
     # save the best parameters to a file with the model name
+    new_folder_name = "bayesian_optimization"
+    if not os.path.exists(new_folder_name):
+        os.makedirs(new_folder_name)
+
+    # Create a new text file inside the folder
+    filename = os.path.join(new_folder_name, name+".csv")
+    
     if not os.path.exists("bayesian_optimization/"+name+".csv"):
-        with open("bayesian_optimization/"+name+".csv", 'w') as f:
-            f.write(str(-optimizer.max['target'])+","+str(optimizer.max) + "\n")
-    else:
-        with open("bayesian_optimization/"+name+".csv", 'a') as f:
-            f.write(str(-optimizer.max['target'])+","+str(optimizer.max) + "\n")
+        open(filename, 'x').close()
+
+    with open(filename, 'a') as f:
+        f.write(str(-optimizer.max['target'])+","+str(optimizer.max) + "\n")
     f.close()
     return optimizer.max['params']
     # optimizer.max
@@ -391,14 +389,14 @@ def lgbm_evaluate(learning_rate, max_depth, num_leaves, feature_fraction, baggin
 
     return rmse
 
-def svr_evaluate(C, gamma, epsilon):
+def svr_evaluate(C, gamma, epsilon, degree):
     # create the pipeline with a StandardScaler and SVR model
-    model = make_pipeline([
-        ('scaler', StandardScaler()),
-        ('svr', SVR(C=C, gamma=gamma, epsilon=epsilon))
-    ])
+    model = make_pipeline(StandardScaler(), SVR(C=C, gamma=gamma, epsilon=epsilon, degree=int(degree)))
+    
+    # Perform 5-fold cross-validation
+    kf = KFold(n_splits=5, shuffle=True, random_state=42)
     # use cross-validation to estimate the model's RMSE
-    rmse = cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
+    rmse = cross_val_score(model, x_train, y_train, cv=kf, scoring='neg_root_mean_squared_error', error_score='raise').mean()
 
     return rmse
 
@@ -489,9 +487,11 @@ estimatorsBayesian = {
 for name, estimator in estimatorsBayesian.items():
     fittedModel = estimator[0]
     bounds = estimator[1]
+    print(name)
     best_params = bayesianOptimization(bounds, fittedModel, name)
-    model = fittedModel(**best_params)
-    model.fit(x_train, y_train)
-    feature_importances = model.feature_importances_
-    np.savetxt(name+'_feature_importances.csv', feature_importances, delimiter=',')
-    save_model(model, name)
+    # model = estimatorsTuning[name][0]
+    # model = fittedModel(**best_params)
+    # model.fit(x_train, y_train, **best_params)
+    # feature_importances = model.feature_importances_
+    # np.savetxt(name+'_feature_importances.csv', feature_importances, delimiter=',')
+    # save_model(model, name)
