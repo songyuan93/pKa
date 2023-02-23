@@ -10,3 +10,7 @@ with parameters: {'bagging_fraction': 0.9779325496127981, 'bagging_freq': 9.0680
 svr
 Improvement of -8.1630%.
 with parameters: {'C': 40.98514566520707, 'degree': 1.4356671026136008, 'epsilon': 0.07745575493924553, 'gamma': 0.019434483644226425}
+gboost
+Improvement of 2.3046%.
+with parameters: {'alpha': 0.5789702493390205, 'learning_rate': 0.17081669882354159, 'max_depth': 9.164535670781119, 'min_samples_leaf': 1.187559403812776, 'min_samples_split': 26.87114872929766, 'n_estimators': 219.51967718173677, 'subsample': 0.7177339087360016}
+

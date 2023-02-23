@@ -157,6 +157,7 @@ gboostBounds = {
     'min_samples_leaf': (1, 20),
     'subsample': (0.1, 1.0),
     'alpha': (0.01, 0.99),
+    'random_state': (40, 320)
 }
 
 xgboostBounds = {
@@ -318,7 +319,7 @@ def bayesianOptimization(bounds, fittedModel, name):
     optimizer = BayesianOptimization(
         f=fittedModel,
         pbounds=bounds,
-        random_state=24,
+        random_state=240,
     )
     optimizer.maximize(init_points=10, n_iter=500)
     # save the best parameters to a file with the model name
@@ -338,7 +339,7 @@ def bayesianOptimization(bounds, fittedModel, name):
     return optimizer.max
     # optimizer.max
 
-def gb_regression_cv(n_estimators, learning_rate, max_depth, min_samples_split, min_samples_leaf, subsample, alpha):
+def gb_regression_cv(n_estimators, learning_rate, max_depth, min_samples_split, min_samples_leaf, subsample, alpha,random_state):
     model = GradientBoostingRegressor(
         n_estimators=int(n_estimators),
         learning_rate=learning_rate,
@@ -347,7 +348,7 @@ def gb_regression_cv(n_estimators, learning_rate, max_depth, min_samples_split, 
         min_samples_leaf=int(min_samples_leaf),
         subsample=subsample,
         alpha=alpha,
-        random_state=56
+        random_state=random_state
     )
     # use cross-validation to estimate the model's RMSE
     rmse = cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
@@ -481,7 +482,7 @@ def save_model(model, model_name):
 
 estimatorsBayesian = {
         #Vincent's model
-        'gboost': [gb_regression_cv, gboostBounds],
+        # 'gboost': [gb_regression_cv, gboostBounds],
         'xgboost':[xgb_evaluate, xgboostBounds],
         'lgbm':[lgbm_evaluate, lgbmBounds],
         'svr':[svr_evaluate, svrBounds],
