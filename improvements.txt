@@ -14,3 +14,19 @@ gboost
 Improvement of 2.3046%.
 with parameters: {'alpha': 0.5789702493390205, 'learning_rate': 0.17081669882354159, 'max_depth': 9.164535670781119, 'min_samples_leaf': 1.187559403812776, 'min_samples_split': 26.87114872929766, 'n_estimators': 219.51967718173677, 'subsample': 0.7177339087360016}
 
+xgboost
+Improvement of 9.2001%.
+with parameters: {'colsample_bytree': 0.9663782739607691, 'gamma': 0.07983783278532386, 'learning_rate': 0.0450798122752451, 'max_depth': 10.66842881054941, 'min_child_weight': 11.652866945053459, 'n_estimators': 296.3421973434399, 'reg_alpha': 0.450517058188605, 'reg_lambda': 0.9893514618581893, 'subsample': 0.8634603758602453}
+
+lgbm
+Improvement of -4.3088%.
+with parameters: {'bagging_fraction': 0.8250087552084953, 'bagging_freq': 5.45944000758423, 'feature_fraction': 0.7812708696233218, 'lambda_l1': 0.9302717549492266, 'lambda_l2': 0.40705923859918847, 'learning_rate': 0.0843306655878558, 'max_depth': 12.605496558705388, 'min_child_samples': 5.018737153926628, 'num_leaves': 141.7570014848749}
+
+svr
+Improvement of -9.9107%.
+with parameters: {'C': 14.52487054907436, 'degree': 9.80752521922108, 'epsilon': 0.16133830029004412, 'gamma': 0.010141414448401569}
+
+etr
+Improvement of 4.4440%.
+with parameters: {'max_depth': 20.170552548151605, 'max_features': 0.5488126674767126, 'min_samples_leaf': 1.3095400373417372, 'min_samples_split': 3.0108476454290614, 'n_estimators': 270.7516335284461}
+

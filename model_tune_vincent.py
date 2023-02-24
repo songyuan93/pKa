@@ -482,11 +482,17 @@ def save_model(model, model_name):
 
 estimatorsBayesian = {
         #Vincent's model
-        # 'gboost': [gb_regression_cv, gboostBounds],
-        'xgboost':[xgb_evaluate, xgboostBounds],
-        'lgbm':[lgbm_evaluate, lgbmBounds],
-        'svr':[svr_evaluate, svrBounds],
         'etr':[extratree_evaluate, etrBounds],
+        'svr':[svr_evaluate, svrBounds],
+        'lgbm':[lgbm_evaluate, lgbmBounds],
+        'xgboost':[xgb_evaluate, xgboostBounds],
+        'gboost': [gb_regression_cv, gboostBounds],
+
+        # 'gboost': [gb_regression_cv, gboostBounds],
+        # 'xgboost':[xgb_evaluate, xgboostBounds],
+        # 'lgbm':[lgbm_evaluate, lgbmBounds],
+        # 'svr':[svr_evaluate, svrBounds],
+        # 'etr':[extratree_evaluate, etrBounds],
         # 'rf':RandomForestRegressor(n_estimators=30,random_state=209),
 }
 
