@@ -4,7 +4,7 @@ import numpy as np  #data manipulate package
 import pandas as pd #data loading package
 #import the metrics test machine learning models
 from sklearn.metrics import mean_absolute_error,mean_squared_error, r2_score
-from sklearn.model_selection import GridSearchCV, cross_val_score, KFold
+from sklearn.model_selection import GridSearchCV, cross_val_score, KFold, RandomizedSearchCV
 
 
 from xgboost import XGBRegressor
@@ -185,7 +185,7 @@ lgbmBounds = {
 }
 
 svrBounds = {
-    'C': (0.1, 100),
+    'C': (0.1, 10),
     'gamma': (0.0001, 10),
     'epsilon': (0.01, 1),
     'degree': (1, 10),
@@ -218,6 +218,7 @@ estimators = {
         # 'gp':GPR(kernel=kernel,n_restarts_optimizer=9).fit(x_train,y_train)
         }
 
+# Creating a dictionary of base estimators and their corresponding parameter grids.
 estimatorsTuning = {
         #Vincent's model
         'gboost': [GradientBoostingRegressor(), gboostParamGrid],
@@ -234,10 +235,7 @@ def saveParamterMetrics(grid_search, name):
     #save the parameter and metrics to csv file
     filename = "hyperparameter_fine_tuning_metrics/"+name+".csv"
     if not os.path.exists(filename):
-        with open(filename, 'w') as f:
-            for mean_score, params in zip(grid_search.cv_results_['mean_test_score'], grid_search.cv_results_['params']):
-                f.write("%0.10f,%r" % (np.sqrt(-mean_score), params))
-                f.write("\n")
+        open(filename, 'x').close()
     with open(filename, 'a') as f:
         for mean_score, params in zip(grid_search.cv_results_['mean_test_score'], grid_search.cv_results_['params']):
             f.write("%0.10f,%r" % (np.sqrt(-mean_score), params))
@@ -252,24 +250,23 @@ def saveFeaturesImportance(grid_search, name, data):
     # num_features = len(feature_importance)
     filename = "features_importance/"+name+".csv"
     if not os.path.exists(filename):
-        with open(filename, 'w') as f:
-            f.write(sorted(zip(feature_importance, num_attributes), reverse=True))
-            
+        open(filename, 'x').close()
+
     with open(filename, 'a') as f:
         f.write(sorted(zip(feature_importance, num_attributes), reverse=True))
     f.close()
         
 
 def hyperparamterTuning(model, param_grid, name, x_test, y_test):
-    grid_search = GridSearchCV(model, param_grid=param_grid, cv=5, scoring='neg_mean_squared_error')
-    grid_search.fit(x_test, y_test)
-    bestParam = grid_search.best_params_
-    bestScore = grid_search.best_score_
-    cv_scores = grid_search.cv_results_
-    saveParamterMetrics(grid_search, name)
-    saveFeaturesImportance(grid_search, name, x_test)
-    # fine_tune_model(model, param_grid, x_train, y_train, x_test, y_test)
-    return grid_search.best_estimator_
+    rand_search = RandomizedSearchCV(model, param_grid=param_grid, cv=10, scoring='neg_root_mean_squared_error')
+    rand_search.fit(x_test, y_test)
+    bestParam = rand_search.best_params_
+    bestScore = rand_search.best_score_
+    cv_scores = rand_search.cv_results_
+    saveParamterMetrics(rand_search, name)
+    saveFeaturesImportance(rand_search, name, x_test)
+    # fine_tune_model(model, param_rand, x_train, y_train, x_test, y_test)
+    return rand_search.best_estimator_
 
 # cross validate the model and return the rmse mean
 def cross_validate(model, train, test):
@@ -300,6 +297,14 @@ def evaluate(model, test_features, test_labels):
     return accuracy
 
 def checkImprovement(name, base_model, optimal):
+    """
+    It takes a name, a base model, and the optimal parameters from a Bayesian Optimization run, and
+    writes the improvement to a file
+    
+    :param name: the name of the model
+    :param base_model: the model you're trying to improve
+    :param optimal: the best parameters found by the Bayesian Optimization
+    """
     base_accuracy = np.sqrt(mean_squared_error(base_model.fit(x_train,y_train).predict(x_test), y_test))
     improved_accuracy = -optimal["target"]
     filename = "improvements.txt"
@@ -308,7 +313,7 @@ def checkImprovement(name, base_model, optimal):
         open(filename, 'x').close()
 
     with open(filename, 'a') as f:
-        f.write(name + "\nImprovement of {:0.4f}%.\n".format( 100 * (improved_accuracy - base_accuracy) / base_accuracy))
+        f.write(name + "\nImprovement of {:0.4f}% with rmse of {}.\n".format( 100 * (improved_accuracy - base_accuracy) / base_accuracy), improved_accuracy)
         f.write("with parameters: " + str(optimal["params"]) + "\n\n")
     f.close()
     # print('Improvement of {:0.2f}%.'.format( 100 * (improved_accuracy - base_accuracy) / base_accuracy))
@@ -316,6 +321,15 @@ def checkImprovement(name, base_model, optimal):
 from bayes_opt import BayesianOptimization
 # fine tune model with bayesian optimization
 def bayesianOptimization(bounds, fittedModel, name):
+    """
+    It takes in the bounds of the parameters, the fitted model, and the name of the model, and returns
+    the best parameters and the best score
+    
+    :param bounds: the bounds of the parameters to be optimized
+    :param fittedModel: the function that we want to optimize
+    :param name: the name of the model
+    :return: The best parameters and the best score
+    """
     optimizer = BayesianOptimization(
         f=fittedModel,
         pbounds=bounds,
@@ -340,6 +354,23 @@ def bayesianOptimization(bounds, fittedModel, name):
     # optimizer.max
 
 def gb_regression_cv(n_estimators, learning_rate, max_depth, min_samples_split, min_samples_leaf, subsample, alpha,random_state):
+    """
+    It takes in a set of hyperparameters, creates a gradient boosting regressor with those
+    hyperparameters, and then uses cross-validation to estimate the model's RMSE
+    
+    :param n_estimators: The number of boosting stages to perform. Gradient boosting is fairly robust to
+    over-fitting so a large number usually results in better performance
+    :param learning_rate: float, optional (default=0.1)
+    :param max_depth: The maximum depth of a tree
+    :param min_samples_split: The minimum number of samples required to split an internal node
+    :param min_samples_leaf: The minimum number of samples required to be at a leaf node
+    :param subsample: The fraction of observations to be selected for each tree. Selection is done by
+    random sampling
+    :param alpha: L1 regularization term on weights. Increasing this value will make model more
+    conservative
+    :param random_state: the seed used by the random number generator
+    :return: The RMSE of the model
+    """
     model = GradientBoostingRegressor(
         n_estimators=int(n_estimators),
         learning_rate=learning_rate,
@@ -348,7 +379,7 @@ def gb_regression_cv(n_estimators, learning_rate, max_depth, min_samples_split, 
         min_samples_leaf=int(min_samples_leaf),
         subsample=subsample,
         alpha=alpha,
-        random_state=random_state
+        random_state=int(random_state)
     )
     # use cross-validation to estimate the model's RMSE
     rmse = cross_val_score(model, x_train, y_train, cv=10, scoring='neg_root_mean_squared_error').mean()
@@ -356,6 +387,26 @@ def gb_regression_cv(n_estimators, learning_rate, max_depth, min_samples_split, 
     return rmse
 
 def xgb_evaluate(n_estimators, learning_rate, max_depth, min_child_weight, subsample, colsample_bytree, gamma, reg_alpha, reg_lambda):
+    """
+    It creates an XGBRegressor model with the specified hyperparameters, uses cross-validation to
+    estimate the model's RMSE, and returns the RMSE
+    
+    :param n_estimators: the number of trees in the forest
+    :param learning_rate: step size shrinkage used to prevent overfitting. Range is [0,1]
+    :param max_depth: The maximum depth of a tree
+    :param min_child_weight: Minimum sum of instance weight (hessian) needed in a child
+    :param subsample: Subsample ratio of the training instances. Setting it to 0.5 means that XGBoost
+    would randomly sample half of the training data prior to growing trees. and this will prevent
+    overfitting. Subsampling will occur once in every boosting iteration
+    :param colsample_bytree: The fraction of columns to be randomly samples for each tree
+    :param gamma: minimum loss reduction required to make a further partition on a leaf node of the
+    tree. The larger, the more conservative the algorithm will be
+    :param reg_alpha: L1 regularization term on weights. Increasing this value will make model more
+    conservative
+    :param reg_lambda: L2 regularization term on weights. Increasing this value will make model more
+    conservative
+    :return: The RMSE of the model
+    """
     # create the XGBRegressor model with the specified hyperparameters
     model = XGBRegressor(
         objective='reg:squarederror',
@@ -377,6 +428,21 @@ def xgb_evaluate(n_estimators, learning_rate, max_depth, min_child_weight, subsa
     return rmse
 
 def lgbm_evaluate(learning_rate, max_depth, num_leaves, feature_fraction, bagging_fraction, bagging_freq, min_child_samples, lambda_l1, lambda_l2):
+    """
+    It creates a LightGBM model with the specified hyperparameters, and then uses cross-validation to
+    estimate the model's RMSE
+    
+    :param learning_rate: the step size shrinkage used to prevent overfitting
+    :param max_depth: The maximum depth of a tree
+    :param num_leaves: The number of leaves to use in the model
+    :param feature_fraction: The fraction of features to use
+    :param bagging_fraction: the fraction of data to be used for each iteration (tree)
+    :param bagging_freq: the number of times to perform bagging (default: 0)
+    :param min_child_samples: Minimum number of data need in a child (leaf)
+    :param lambda_l1: L1 regularization
+    :param lambda_l2: L2 regularization term on weights
+    :return: The RMSE of the model
+    """
     # create the model with the specified hyperparameters
     model = ltb.LGBMRegressor(
         learning_rate=learning_rate,
@@ -396,6 +462,17 @@ def lgbm_evaluate(learning_rate, max_depth, num_leaves, feature_fraction, baggin
     return rmse
 
 def svr_evaluate(C, gamma, epsilon, degree):
+    """
+    It creates a pipeline with a StandardScaler and SVR model, performs 10-fold cross-validation, and
+    returns the RMSE
+    
+    :param C: Penalty parameter C of the error term
+    :param gamma: Kernel coefficient for ‘rbf’, ‘poly’ and ‘sigmoid’
+    :param epsilon: the epsilon-tube within which no penalty is associated in the training loss function
+    with points predicted within a distance epsilon from the actual value
+    :param degree: The degree of the polynomial kernel function (‘poly’). Ignored by all other kernels
+    :return: The RMSE of the model
+    """
     # create the pipeline with a StandardScaler and SVR model
     model = make_pipeline(StandardScaler(), SVR(C=C, gamma=gamma, epsilon=epsilon, degree=int(degree)))
     
@@ -407,6 +484,17 @@ def svr_evaluate(C, gamma, epsilon, degree):
     return rmse
 
 def extratree_evaluate(n_estimators, max_features, max_depth, min_samples_split, min_samples_leaf):
+    """
+    It takes in 5 parameters, and returns the mean accuracy of a random forest model with those
+    parameters
+    
+    :param n_estimators: The number of trees in the forest
+    :param max_features: The number of features to consider when looking for the best split
+    :param max_depth: The maximum depth of the tree. If None, then nodes are expanded until all leaves
+    are pure or until all leaves contain less than min_samples_split samples
+    :param min_samples_split: The minimum number of samples required to split an internal node
+    :param min_samples_leaf: The minimum number of samples required to be at a leaf node
+    """
     # create the ExtraTreesRegressor model with the specified hyperparameters
     model = ExtraTreesRegressor(
         n_estimators=int(n_estimators),
@@ -475,27 +563,34 @@ def runInitial():
 # save model
 import pickle
 def save_model(model, model_name):
+    """
+    It saves the model to a file named `model_name` in the `models` directory
+    
+    :param model: the model you want to save
+    :param model_name: The name of the model you want to save
+    """
     filename = model_name + '.bin'
     with open(filename, 'wb') as file:
         pickle.dump(model, file)
         file.close
 
+# Defining the estimators that will be used in the Bayesian Optimization.
 estimatorsBayesian = {
         #Vincent's model
-        'etr':[extratree_evaluate, etrBounds],
-        'svr':[svr_evaluate, svrBounds],
-        'lgbm':[lgbm_evaluate, lgbmBounds],
-        'xgboost':[xgb_evaluate, xgboostBounds],
-        'gboost': [gb_regression_cv, gboostBounds],
-
+        # 'etr':[extratree_evaluate, etrBounds],
+        # 'svr':[svr_evaluate, svrBounds],
+        # 'lgbm':[lgbm_evaluate, lgbmBounds],
+        # 'xgboost':[xgb_evaluate, xgboostBounds],
         # 'gboost': [gb_regression_cv, gboostBounds],
+
+        'gboost': [gb_regression_cv, gboostBounds],
         # 'xgboost':[xgb_evaluate, xgboostBounds],
         # 'lgbm':[lgbm_evaluate, lgbmBounds],
         # 'svr':[svr_evaluate, svrBounds],
         # 'etr':[extratree_evaluate, etrBounds],
-        # 'rf':RandomForestRegressor(n_estimators=30,random_state=209),
 }
 
+# Using Bayesian Optimization to find the best parameters for each model.
 for name, estimator in estimatorsBayesian.items():
     fittedModel = estimator[0]
     bounds = estimator[1]
