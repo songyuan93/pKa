@@ -46,3 +46,73 @@ gboost
 Improvement of -1.7485%.
 with parameters: {'alpha': 0.7108482619833327, 'learning_rate': 0.09334188479531076, 'max_depth': 8.73242000112786, 'min_samples_leaf': 1.813978998924593, 'min_samples_split': 25.954512640645028, 'n_estimators': 163.47242034006712, 'random_state': 317.37994563438696, 'subsample': 0.7873829788155359}
 
+etr
+Improvement of 8.4347% with rmse of 0.7419932649 from 0.6842767913.
+with parameters: {'n_estimators': 62.32035668977451}
+
+svr
+Improvement of 68.6792% with rmse of 1.4718413738 from 0.8725683467.
+with parameters: {'C': 10.0, 'degree': 9.014295123093165, 'epsilon': 0.01, 'gamma': 0.0001}
+
+lgbm
+Improvement of 9.9943% with rmse of 0.9010848566 from 0.8192106653.
+with parameters: {'n_estimators': 300.571474713973}
+
+xgboost
+Improvement of 14.4620% with rmse of 0.8779702792 from 0.7670411197.
+with parameters: {'n_estimators': 244.6688420996919}
+
+Before this line negative improvement is good
+
+etr
+Improvement of -4.1486% with rmse of 0.7361203215 from 0.7055817024.
+with parameters: {'n_estimators': 33.75113163849336}
+
+svr
+Improvement of 8.6179% with rmse of 0.8033378888 from 0.8725683467.
+with parameters: {'C': 7.918431148869302, 'degree': 9.277851098924991, 'epsilon': 0.14171059760471683, 'gamma': 0.02893232812492652}
+
+lgbm
+Improvement of -9.3616% with rmse of 0.9038233731 from 0.8192106653.
+with parameters: {'n_estimators': 88.95171316077257}
+
+xgboost
+Improvement of -12.6675% with rmse of 0.8782992697 from 0.7670411197.
+with parameters: {'n_estimators': 91.55375832136072}
+
+etr
+Improvement of -5.2771% with rmse of 0.7344054764 from 0.6956504317.
+with parameters: {'n_estimators': 22.94637852728145}
+
+svr
+Improvement of 11.0397% with rmse of 0.7858169098 from 0.8725683467.
+with parameters: {'C': 9.28476662282332, 'degree': 9.443852772231875, 'epsilon': 0.22994703112349235, 'gamma': 0.012475944719449593}
+
+lgbm
+Improvement of -9.3616% with rmse of 0.9038233731 from 0.8192106653.
+with parameters: {'n_estimators': 88.95171316077257}
+
+xgboost
+Improvement of -12.6675% with rmse of 0.8782992697 from 0.7670411197.
+with parameters: {'n_estimators': 91.55375832136072}
+
+etr
+Improvement of -5.8218% with rmse of 0.7362080875 from 0.6933475094.
+with parameters: {'n_estimators': 81.35121765397885}
+
+svr
+Improvement of 11.0397% with rmse of 0.7858169098 from 0.8725683467.
+with parameters: {'C': 9.28476662282332, 'degree': 9.443852772231875, 'epsilon': 0.22994703112349235, 'gamma': 0.012475944719449593}
+
+lgbm
+Improvement of -9.3616% with rmse of 0.9038233731 from 0.8192106653.
+with parameters: {'n_estimators': 88.95171316077257}
+
+xgboost
+Improvement of -12.6675% with rmse of 0.8782992697 from 0.7670411197.
+with parameters: {'n_estimators': 91.55375832136072}
+
+gboost
+Improvement of -10.8088% with rmse of 0.8905135287 from 0.7942599736.
+with parameters: {'n_estimators': 98.63178903040227}
+
