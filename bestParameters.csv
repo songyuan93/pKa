@@ -3,4 +3,4 @@ gboost,0.7966913494159698,{'alpha': 0.7108482619833327, 'learning_rate': 0.09334
 xgboost,0.7670411197,{'base_score': 0.5,'booster': 'gbtree','colsample_bylevel': 1,'colsample_bynode': 1,'colsample_bytree': 1,'gamma': 0,'importance_type': 'gain','learning_rate': 0.1,'max_delta_step': 0,'max_depth': 6,'min_child_weight': 1,'missing': None,'n_estimators': 100,'n_jobs': 1,'nthread': None,'objective': 'reg:squarederror','random_state': 0,'reg_alpha': 0,'reg_lambda': 1,'scale_pos_weight': 1,'seed': None,'silent': None,'subsample': 1,'verbosity': 1}
 svr,0.7858169097778426,{'C': 9.28476662282332, 'degree': 9.443852772231875, 'epsilon': 0.22994703112349235, 'gamma': 0.012475944719449593}
 lgbm,0.7839121713756714,{'bagging_fraction': 0.8250087552084953, 'bagging_freq': 5.45944000758423, 'feature_fraction': 0.7812708696233218, 'lambda_l1': 0.9302717549492266, 'lambda_l2': 0.40705923859918847, 'learning_rate': 0.0843306655878558, 'max_depth': 12.605496558705388, 'min_child_samples': 5.018737153926628, 'num_leaves': 141.7570014848749}
-etr,0.6547065357320659,{'n_estimators=30,random_state=209}
+etr,0.6393681337945138,{'n_estimators=23,random_state=209}

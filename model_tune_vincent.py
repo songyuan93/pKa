@@ -202,11 +202,11 @@ etrBounds = {
 # kernel = ConstantKernel(1.0) + ConstantKernel(1.0) * RBF(10)  + WhiteKernel(5)
 estimators = {
         #Vincent's model
-        'gboost': GradientBoostingRegressor(),
-        'xgboost':XGBRegressor(n_estimators=30),
-        'lgbm':ltb.LGBMRegressor(n_estimators=30),
-        'svr':make_pipeline(StandardScaler(), SVR(C=1.0, epsilon=0.2)),
-        'etr':ExtraTreesRegressor(n_estimators=30,random_state=209),
+        # 'gboost': GradientBoostingRegressor(),
+        # 'xgboost':XGBRegressor(n_estimators=30),
+        # 'lgbm':ltb.LGBMRegressor(n_estimators=30),
+        # 'svr':make_pipeline(StandardScaler(), SVR(C=1.0, epsilon=0.2)),
+        'etr':ExtraTreesRegressor(n_estimators=22,random_state=209),
         # 'rf':RandomForestRegressor(n_estimators=30,random_state=209),
 
         #logan's model
@@ -229,6 +229,7 @@ estimatorsTuning = {
         'etr':[ExtraTreesRegressor(), etrParamGrid],
         # 'rf':RandomForestRegressor(n_estimators=30,random_state=209),
 }
+
 
 CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -277,13 +278,14 @@ def cross_validate(model, train, test):
     return "{:.10f}".format(rmse_scores.mean())
 
 # creates a file if filename does not exist and appends the model name and rmse to the file
-def write_to_file(filename, model_name, metrics):
+def write_to_file(filename, model_name, metrics,model):
     if not os.path.exists(filename):
         with open(filename, 'w') as f:
-            f.write(model_name + "\n" + metrics + "\n")
+            f.write(model_name + "\n" + metrics + "\n" + str(model) + "\n")
     else:
         with open(filename, 'a') as f:
-            f.write(model_name + "\n" + metrics + "\n")
+           f.write(model_name + "\n" + metrics + "\n" + str(model) + "\n")
+
     f.close()
 
 def evaluate(model, test_features, test_labels):
@@ -560,10 +562,10 @@ def runInitial():
         print("")
         # format a return string metrics that includes rmse, mae, and r2 seperated by new lines
         metrics = "RMSE: {}\n".format(rmse) + "MAE: {}\n".format(mae) + "r2: {}\n".format(r2)
-        write_to_file("test_results.txt", name, metrics) 
+        write_to_file("test_results.txt", name, metrics, model) 
 
 
-# runInitial()
+runInitial()
 
 # save model
 import pickle
@@ -596,13 +598,13 @@ estimatorsBayesian = {
 }
 
 # Using Bayesian Optimization to find the best parameters for each model.
-for name, estimator in estimatorsBayesian.items():
-    fittedModel = estimator[0]
-    bounds = estimator[1]
-    print(name)
-    bestTargetParams = bayesianOptimization(bounds, fittedModel, name)
-    model = estimatorsTuning[name][0]
-    checkImprovement(name, model, bestTargetParams)
+# for name, estimator in estimatorsBayesian.items():
+#     fittedModel = estimator[0]
+#     bounds = estimator[1]
+#     print(name)
+#     bestTargetParams = bayesianOptimization(bounds, fittedModel, name)
+#     model = estimatorsTuning[name][0]
+#     checkImprovement(name, model, bestTargetParams)
     # model = fittedModel(**best_params)
     # model.fit(x_train, y_train, **best_params)
     # feature_importances = model.feature_importances_
